@@ -90,13 +90,13 @@ def main(args):
 
     dataset = np.load(args.datapath)
 
-    train_output = dataset['train_output']
-    train_input = dataset['train_input']
-    train_labels = dataset['train_labels']
+    train_output = torch.Tensor(dataset['train_output'])
+    train_input = torch.Tensor(dataset['train_input'])
+    train_labels = torch.Tensor(dataset['train_labels'])
 
-    test_output = dataset['test_output']
-    test_input = dataset['test_input']
-    test_labels = dataset['test_labels']
+    test_output = torch.Tensor(dataset['test_output'])
+    test_input = torch.Tensor(dataset['test_input'])
+    test_labels = torch.Tensor(dataset['test_labels'])
 
     train_dataset = TensorDataset(train_input, train_output, train_labels)
     test_dataset = TensorDataset(test_input, test_output, test_labels)
