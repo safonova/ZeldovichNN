@@ -139,8 +139,12 @@ def main(args):
             phate_op = phate.PHATE()
             data_phate = phate_op.fit_transform(train_latent)
 
+
+            cmap = cm.get_cmap('Spectral',
+                               len(np.unique(train_labels)))
             fig, axes = plt.subplots(figsize=(9, 8), dpi=120, nrows=2, ncols=2)
-            axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7, c=train_labels)
+            axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
+                               c=train_labels, cmap=cmap)
             axes[0][0].set(title="PHATE of Train latent space",
                         xlabel="PHATE1",
                         ylabel="PHATE2")
@@ -149,8 +153,9 @@ def main(args):
             phate_op = phate.PHATE()
             data_phate = phate_op.fit_transform(test_latent)
 
-            s1 = axes[0][1].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7, c=test_labels)
-            axes[1][1].set(title="PHATE of Test latent space",
+            s1 = axes[0][1].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
+                                    c=test_labels, cmap=cmap)
+            axes[0][1].set(title="PHATE of Test latent space",
                         xlabel="PHATE1",
                         ylabel="PHATE2")
             print('====> Epoch: {} Average loss: {:.4f}'.format(
@@ -158,16 +163,19 @@ def main(args):
             plt.colorbar(s1)
 
             train_tSNE = TSNE(n_components=2,init = 'random').fit_transform(train_latent)
-            axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7, c=train_labels)
+            axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7,
+                               c=train_labels, cmap=cmap)
             axes[1][0].set(title="tSNE of Train latent space",
                         xlabel="tSNE1",
                         ylabel="tSNE2")
 
             test_tSNE = TSNE(n_components=2, init = 'random').fit_transform(test_latent)
-            axes[1][1].scatter(test_tSNE[:, 0], test_tSNE[:, 1], s=1.5, alpha=0.7, c=test_labels)
+            axes[1][1].scatter(test_tSNE[:, 0], test_tSNE[:, 1], s=1.5, alpha=0.7,
+                               c=test_labels, cmap=cmap)
             axes[1][1].set(title="tSNE of Test latent space",
                         xlabel="tSNE1",
                         ylabel="tSNE2")
+
 
             plt.savefig(f"{args.savepath}/VAE_latent_epoch_{epoch}.png")
             fig, axes = plt.subplots(figsize=(6,4), dpi=120)
