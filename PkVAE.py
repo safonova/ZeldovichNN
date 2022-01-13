@@ -23,11 +23,11 @@ class VAE(nn.Module):
     def __init__(self, input_neurons, latent_width=20, hidden_width=400):
         super(VAE, self).__init__()
 
-        self.fc1 = nn.Linear(input_neurons, 400)
-        self.fc21 = nn.Linear(400, latent_width)
-        self.fc22 = nn.Linear(400, latent_width)
-        self.fc3 = nn.Linear(latent_width, 400)
-        self.fc4 = nn.Linear(400, input_neurons)
+        self.fc1 = nn.Linear(input_neurons, hidden_width)
+        self.fc21 = nn.Linear(hidden_width, latent_width)
+        self.fc22 = nn.Linear(hidden_width, latent_width)
+        self.fc3 = nn.Linear(latent_width, hidden_width)
+        self.fc4 = nn.Linear(hidden_width, input_neurons)
 
     def encode(self, x):
         m = nn.PReLU()
