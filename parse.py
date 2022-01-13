@@ -14,7 +14,7 @@ parser.add_argument("--reload", action="store_true",
                     help="Resurrects existing model from last checkpoint in the savepath.")
 parser.add_argument("--KL_weight", type=float, default=1,
                     help='Weight applied to the KL divergence term int he loss function.')
-parser.add_argument("--epochs", type='int', default=100000 help='Number of epochs to train over.')
+parser.add_argument("--epochs", type='int', default=100000, help='Number of epochs to train over.')
 parser.add_argument("--lr", type=float, default=1e-3, help='Learning rate for the optimizer.')
 parser.add_argument("--seed", type=int, default=1, help="Seed for random processes in PyTorch.")
 parser.add_argument("--no_cuda", action="store_true", help="Makes the script on a CPU even if a GPU is available.")
