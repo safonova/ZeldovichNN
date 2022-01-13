@@ -124,7 +124,7 @@ def main(args):
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, device, optimizer)
         losses.append(train_loss)
-        
+
         # Save the latest model state if the loss has decreased
         if train_loss < losses[-1]:
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
@@ -163,7 +163,7 @@ def main(args):
                         xlabel="tSNE1",
                         ylabel="tSNE2")
 
-            test_tSNE = TSNE(n_components=2, learning_rate='auto',init = 'random').fit_transform(test_latent)
+            test_tSNE = TSNE(n_components=2, init = 'random').fit_transform(test_latent)
             axes[1][1].scatter(test_tSNE[:, 0], test_tSNE[:, 1], s=1.5, alpha=0.7, c=test_labels)
             axes[1][1].set(title="tSNE of Test latent space",
                         xlabel="tSNE1",
