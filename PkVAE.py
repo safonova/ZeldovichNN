@@ -22,12 +22,15 @@ matplotlib.use("Agg")
 class VAE(nn.Module):
     def __init__(self, input_neurons, latent_width=20, hidden_width=400):
         super(VAE, self).__init__()
+        self.input_neurons = input_neurons
+        self.latent_width = latent_width
+        self.hidden_width = hidden_width
 
-        self.fc1 = nn.Linear(input_neurons, hidden_width)
-        self.fc21 = nn.Linear(hidden_width, latent_width)
-        self.fc22 = nn.Linear(hidden_width, latent_width)
-        self.fc3 = nn.Linear(latent_width, hidden_width)
-        self.fc4 = nn.Linear(hidden_width, input_neurons)
+        self.fc1 = nn.Linear(self.input_neurons, self.hidden_width)
+        self.fc21 = nn.Linear(self.hidden_width, self.latent_width)
+        self.fc22 = nn.Linear(self.hidden_width, self.latent_width)
+        self.fc3 = nn.Linear(self.latent_width, self.hidden_width)
+        self.fc4 = nn.Linear(self.hidden_width, self.input_neurons)
 
     def encode(self, x):
         m = nn.PReLU()
@@ -45,12 +48,12 @@ class VAE(nn.Module):
         return torch.sigmoid(self.fc4(h3))
 
     def forward(self, x):
-        mu, logvar = self.encode(x.view(-1, ks_to_keep))
+        mu, logvar = self.encode(x.view(-1, self.input_neurons))
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
     def latent_numpy(self, x):
-        mu, logvar = self.encode(x.view(-1, ks_to_keep))
+        mu, logvar = self.encode(x.view(-1, self.input_neurons))
         z = self.reparameterize(mu, logvar)
         latent = z.detach().numpy()
         return latent
