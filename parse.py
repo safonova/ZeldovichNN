@@ -18,3 +18,5 @@ parser.add_argument("--epochs", type=int, default=10000, help='Number of epochs 
 parser.add_argument("--lr", type=float, default=1e-3, help='Learning rate for the optimizer.')
 parser.add_argument("--seed", type=int, default=1, help="Seed for random processes in PyTorch.")
 parser.add_argument("--no_cuda", action="store_true", help="Makes the script on a CPU even if a GPU is available.")
+parser.add_argument("--hidden_width", type=int, default=400,
+                    help="Number of neurons in hidden layer for a network with 1 hidden layer.")

@@ -113,7 +113,7 @@ def main(args):
 
     torch.manual_seed(args.seed)
 
-    model = VAE(train_input.shape[1], args.latent_width).to(device)
+    model = VAE(train_input.shape[1], args.latent_width, args.hidden_width).to(device)
 
     if args.reload:
         state_dict = torch.load(args.savepath + "/checkpt.pth", map_location=device)
