@@ -65,14 +65,14 @@ def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6):
     return result
 
 
-def train(model, train_loader, device, optimizer):
+def train(model, train_loader, device, optimizer, KLD_weight=1e-6):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
-        loss = VAE_loss_function(recon_batch, data, mu, logvar)
+        loss = VAE_loss_function(recon_batch, data, mu, logvar, KLD_weight=KLD_weight)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -104,17 +104,38 @@ def main(args):
     batch_size = args.batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-    model = VAE(train_input.shape[1], args.latent_width)
+
+    args.cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if args.cuda else "cpu")
+
+    torch.manual_seed(args.seed)
+
+    model = VAE(train_input.shape[1], args.latent_width).to(device)
+
+    if args.reload:
+        state_dict = torch.load(args.savepath + "/checkpt.pth", map_location=device)
+        model.load_state_dict(state_dict["state_dict"])
+
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
     losses = []
     for epoch in range(1, epochs + 1):
-        train_loss = train(epoch, model)
+        train_loss = train(model, train_loader, device, optimizer)
+
+        # Save the latest model state if the loss has decreased
+        if train_loss < losses[-1]:
+            torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
+
         losses.append(train_loss)
-        if epoch % 200 == 0:
+
+        if epoch % args.output_frequency == 0:
+            #Write out the current state of the model
+            torch.save(model, os.path.join(args.savepath, 'checkpt-%04d.pth' % epoch))
+
             train_latent = model.latent_numpy(train_input)
             phate_op = phate.PHATE()
             data_phate = phate_op.fit_transform(train_latent)
 
-            fig, axes = plt.subplots(figsize=(8, 8), dpi=120, nrows=2, ncols=2)
+            fig, axes = plt.subplots(figsize=(9, 8), dpi=120, nrows=2, ncols=2)
             axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7, c=train_labels)
             axes[0][0].set(title="PHATE of Train latent space",
                         xlabel="PHATE1",
@@ -144,8 +165,11 @@ def main(args):
                         xlabel="tSNE1",
                         ylabel="tSNE2")
 
-            plt.savefig(f"{args.savepath}VAE_latent_epoch_{epoch}.png")
-
+            plt.savefig(f"{args.savepath}/VAE_latent_epoch_{epoch}.png")
+            fig, axes = plt.subplots(figsize=(6,4), dpi=120)
+            axes.plot(losses)
+            axes.set(xlabel="Epoch", ylabel="Training loss")
+            plt.savefig(f"{args.savepath}/training_loss_epoch_{epoch}.png")
 if __name__=="__main__":
     from parse import parser
 
