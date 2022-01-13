@@ -157,7 +157,7 @@ def main(args):
                 epoch, train_loss / len(train_loader.dataset)))
             plt.colorbar(s1)
 
-            train_tSNE = TSNE(n_components=2, learning_rate='auto',init = 'random').fit_transform(train_latent)
+            train_tSNE = TSNE(n_components=2,init = 'random').fit_transform(train_latent)
             axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7, c=train_labels)
             axes[1][0].set(title="tSNE of Train latent space",
                         xlabel="tSNE1",
