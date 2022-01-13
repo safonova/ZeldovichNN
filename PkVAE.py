@@ -123,12 +123,13 @@ def main(args):
     losses = []
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, device, optimizer)
-
+        losses.append(train_loss)
+        
         # Save the latest model state if the loss has decreased
         if train_loss < losses[-1]:
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
 
-        losses.append(train_loss)
+
 
         if epoch % args.output_frequency == 0:
             #Write out the current state of the model
