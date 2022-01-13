@@ -84,7 +84,7 @@ def main(args):
     if not os.path.exists(args.savepath):
         os.makedirs(args.savepath)
 
-    with open(savepath+"/run_call.txt", 'w') as textfile:
+    with open(args.savepath+"/run_call.txt", 'w') as textfile:
         call_string =" ".join(sys.argv)
         textfile.write(f"{call_string}")
 
@@ -174,6 +174,5 @@ if __name__=="__main__":
     from parse import parser
 
     args = parser.parse_args()
-    savepath = args.save
 
     main(args)
