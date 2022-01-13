@@ -122,7 +122,7 @@ def main(args):
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     losses = []
     for epoch in range(1, epochs + 1):
-        train_loss = train(model, train_loader, device, optimizer)
+        train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
         losses.append(train_loss)
 
         # Save the latest model state if the loss has decreased
