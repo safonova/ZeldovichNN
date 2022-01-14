@@ -21,8 +21,8 @@ class VAE(nn.Module):
                                      nn.BatchNorm1d(4 * self.hidden_width),
                                      nn.PReLU(),
                                      )
-        self.fc21 = nn.Linear(self.hidden_width, self.latent_width)
-        self.fc22 = nn.Linear(self.hidden_width, self.latent_width)
+        self.fc21 = nn.Linear(4*self.hidden_width, self.latent_width)
+        self.fc22 = nn.Linear(4*self.hidden_width, self.latent_width)
 
 
         self.decoder = nn.Sequential(nn.Linear(self.latent_width, 4*self.hidden_width),
