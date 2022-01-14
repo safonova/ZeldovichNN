@@ -4,13 +4,11 @@ import sys
 import torch
 import torch.utils.data
 from torch import nn, optim
-from torch.nn import functional as F
 from torch.utils.data import TensorDataset
 
 import numpy as np
 
 import phate
-from sklearn.preprocessing import scale
 from sklearn.manifold import TSNE
 
 import matplotlib

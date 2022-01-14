@@ -1,5 +1,5 @@
-from torch import nn, optim
-from torch.nn import functional as F
+from torch import nn
+import torch
 
 class VAE(nn.Module):
     def __init__(self, input_neurons, latent_width=20, hidden_width=400):
