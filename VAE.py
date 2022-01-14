@@ -15,20 +15,14 @@ class VAE(nn.Module):
                                      nn.Linear(self.hidden_width,
                                                2*self.hidden_width),
                                      nn.BatchNorm1d(2*self.hidden_width),
-                                     nn.PReLU(),
-                                     nn.Linear(2*self.hidden_width,
-                                               4 * self.hidden_width),
-                                     nn.BatchNorm1d(4 * self.hidden_width),
+
                                      nn.PReLU(),
                                      )
-        self.fc21 = nn.Linear(4*self.hidden_width, self.latent_width)
-        self.fc22 = nn.Linear(4*self.hidden_width, self.latent_width)
+        self.fc21 = nn.Linear(2*self.hidden_width, self.latent_width)
+        self.fc22 = nn.Linear(2*self.hidden_width, self.latent_width)
 
 
-        self.decoder = nn.Sequential(nn.Linear(self.latent_width, 4*self.hidden_width),
-                                     nn.BatchNorm1d(4*self.hidden_width),
-                                     nn.PReLU(),
-                                     nn.Linear(4*self.hidden_width, 2*self.hidden_width),
+        self.decoder = nn.Sequential(nn.Linear(self.latent_width, 2*self.hidden_width),
                                      nn.BatchNorm1d(2*self.hidden_width),
                                      nn.PReLU(),
                                      nn.Linear(2*self.hidden_width, self.hidden_width),
