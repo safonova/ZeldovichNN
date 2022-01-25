@@ -101,7 +101,7 @@ def main(args):
             data_phate = phate_op.fit_transform(train_latent)
 
 
-            cmap = cm.get_cmap('coolwarm',
+            cmap = cm.get_cmap(args.colormap,
                                len(np.unique(train_labels)))
             fig, axes = plt.subplots(figsize=(9, 8), dpi=120, nrows=2, ncols=2)
             axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,

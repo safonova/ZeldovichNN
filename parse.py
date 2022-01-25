@@ -20,3 +20,6 @@ parser.add_argument("--seed", type=int, default=1, help="Seed for random process
 parser.add_argument("--no_cuda", action="store_true", help="Makes the script on a CPU even if a GPU is available.")
 parser.add_argument("--hidden_width", type=int, default=400,
                     help="Number of neurons in hidden layer for a network with 1 hidden layer.")
+
+parser.add_argument('--colormap', type=str, default="Spectral",
+                    help="Name of matplotlib color map to use in plotting the latent space.")
