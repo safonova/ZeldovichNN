@@ -57,10 +57,12 @@ def main(args):
     train_output = torch.Tensor(dataset['train_output'])
     train_input = torch.Tensor(dataset['train_input'])
     train_labels = torch.Tensor(dataset['train_labels'])
+    train_strings = torch.Tensor(dataset['train_strings'])
 
     test_output = torch.Tensor(dataset['test_output'])
     test_input = torch.Tensor(dataset['test_input'])
     test_labels = torch.Tensor(dataset['test_labels'])
+    test_strings = torch.Tensor(dataset['test_strings'])
 
     train_dataset = TensorDataset(train_input, train_output, train_labels)
     test_dataset = TensorDataset(test_input, test_output, test_labels)
@@ -121,7 +123,11 @@ def main(args):
                         ylabel="PHATE2")
             print('====> Epoch: {} Average loss: {:.4f}'.format(
                 epoch, train_loss / len(train_loader.dataset)))
-            plt.colorbar(s1)
+            #plt.colorbar(s1)
+            
+            for ii, cosmostr in enumerate(np.unique(train_strings)):
+                axes[0][1].scatter([], [], c=cmap([ii])[0], label=cosmostr)
+            axes[0][1].legend(bbox_to_anchor=(1.5, 1))
 
             train_tSNE = TSNE(n_components=2,init = 'random').fit_transform(train_latent)
             axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7,
