@@ -57,12 +57,12 @@ def main(args):
     train_output = torch.Tensor(dataset['train_output'])
     train_input = torch.Tensor(dataset['train_input'])
     train_labels = torch.Tensor(dataset['train_labels'])
-    train_strings = torch.Tensor(dataset['train_strings'])
+    train_strings = dataset['train_strings']
 
     test_output = torch.Tensor(dataset['test_output'])
     test_input = torch.Tensor(dataset['test_input'])
     test_labels = torch.Tensor(dataset['test_labels'])
-    test_strings = torch.Tensor(dataset['test_strings'])
+    test_strings = dataset['test_strings']
 
     train_dataset = TensorDataset(train_input, train_output, train_labels)
     test_dataset = TensorDataset(test_input, test_output, test_labels)
@@ -124,7 +124,6 @@ def main(args):
             print('====> Epoch: {} Average loss: {:.4f}'.format(
                 epoch, train_loss / len(train_loader.dataset)))
             #plt.colorbar(s1)
-            
             for ii, cosmostr in enumerate(np.unique(train_strings)):
                 axes[0][1].scatter([], [], c=cmap([ii])[0], label=cosmostr)
             axes[0][1].legend(bbox_to_anchor=(1.5, 1))
