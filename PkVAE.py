@@ -29,7 +29,7 @@ def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6):
     return result
 
 
-def train(model, train_loader, device, optimizer, KLD_weight=1e-6):
+def train(model, train_loader, device, optimizer, KLD_weight):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
@@ -41,6 +41,70 @@ def train(model, train_loader, device, optimizer, KLD_weight=1e-6):
         train_loss += loss.item()
         optimizer.step()
     return train_loss / len(train_loader.dataset)
+
+
+def test(model, test_loader, device, KLD_weight):
+    test_loss = 0
+    with torch.no_grad():
+        for data, targets, labels in test_loader:
+            data, targets = data.to(device), targets.to(device)
+            recon_batch, mu, logvar = model(data)
+            test_loss += VAE_loss_function(recon_batch, data, mu, logvar,
+                                           KLD_weight=KLD_weight).item()  # sum up batch loss
+    test_loss /= len(test_loader.dataset)
+
+    return test_loss
+
+def visualize_latent(train_latent,
+                     test_latent,
+                     train_labels,
+                     test_labels,
+                     train_strings,
+                     epoch,
+                     args):
+    cmap = cm.get_cmap(args.colormap, len(np.unique(train_labels)))
+
+    phate_op = phate.PHATE()
+    data_phate = phate_op.fit_transform(train_latent)
+
+    fig, axes = plt.subplots(figsize=(12, 8), dpi=120, nrows=2, ncols=3)
+    axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
+                       c=train_labels, cmap=cmap)
+    axes[0][0].set(title="PHATE of Train latent space",
+                   xlabel="PHATE1",
+                   ylabel="PHATE2")
+
+    phate_op = phate.PHATE()
+    data_phate = phate_op.fit_transform(test_latent)
+
+    axes[0][1].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
+                            c=test_labels, cmap=cmap)
+    axes[0][1].set(title="PHATE of Test latent space",
+                   xlabel="PHATE1",
+                   ylabel="PHATE2")
+
+    train_tSNE = TSNE(n_components=2, init='random').fit_transform(train_latent)
+    axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7,
+                       c=train_labels, cmap=cmap)
+    axes[1][0].set(title="tSNE of Train latent space",
+                   xlabel="tSNE1",
+                   ylabel="tSNE2")
+
+    test_tSNE = TSNE(n_components=2, init='random').fit_transform(test_latent)
+    axes[1][1].scatter(test_tSNE[:, 0], test_tSNE[:, 1], s=1.5, alpha=0.7,
+                       c=test_labels, cmap=cmap)
+    axes[1][1].set(title="tSNE of Test latent space",
+                   xlabel="tSNE1",
+                   ylabel="tSNE2")
+    for ii, cosmostr in enumerate(np.unique(train_strings)):
+        axes[0][2].scatter([], [], c=cmap([ii])[0], label=cosmostr)
+    axes[0][2].legend(loc='upper left')
+    plt.subplots_adjust(wspace=0.3, hspace=0.3)
+
+    axes[0][2].axis('off')
+    axes[1][2].axis('off')
+
+    plt.savefig(f"{args.savepath}/VAE_latent_epoch_{epoch}.png")
 
 
 def main(args):
@@ -83,71 +147,41 @@ def main(args):
         model.load_state_dict(state_dict["state_dict"])
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    losses = []
+    train_losses = []
+    test_losses = []
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
-        losses.append(train_loss)
+        train_losses.append(train_loss)
+        test_loss = test(model, test_loader, device, args.KL_weight)
+        test_loss.append(test_loss)
 
         # Save the latest model state if the loss has decreased
-        if train_loss < losses[-1]:
+        if train_loss < train_losses[-1]:
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
-
-
 
         if epoch % args.output_frequency == 0:
             #Write out the current state of the model
             torch.save(model, os.path.join(args.savepath, 'checkpt-%04d.pth' % epoch))
 
             train_latent = model.latent_numpy(train_input)
-            phate_op = phate.PHATE()
-            data_phate = phate_op.fit_transform(train_latent)
-
-
-            cmap = cm.get_cmap(args.colormap,
-                               len(np.unique(train_labels)))
-            fig, axes = plt.subplots(figsize=(9, 8), dpi=120, nrows=2, ncols=2)
-            axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
-                               c=train_labels, cmap=cmap)
-            axes[0][0].set(title="PHATE of Train latent space",
-                        xlabel="PHATE1",
-                        ylabel="PHATE2")
-
             test_latent = model.latent_numpy(test_input)
-            phate_op = phate.PHATE()
-            data_phate = phate_op.fit_transform(test_latent)
+            visualize_latent(train_latent,
+                             test_latent,
+                             train_labels,
+                             test_labels,
+                             train_strings,
+                             epoch,
+                             args)
 
-            s1 = axes[0][1].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
-                                    c=test_labels, cmap=cmap)
-            axes[0][1].set(title="PHATE of Test latent space",
-                        xlabel="PHATE1",
-                        ylabel="PHATE2")
+            fig, axes = plt.subplots(figsize=(6,4), dpi=120)
+            axes.plot(train_losses, label='Train')
+            axes.plot(test_losses, label='Test')
+            axes.legend()
+            axes.set(xlabel="Epoch", ylabel="Loss")
+            plt.savefig(f"{args.savepath}/training_loss_epoch_{epoch}.png")
+
             print('====> Epoch: {} Average loss: {:.4f}'.format(
                 epoch, train_loss / len(train_loader.dataset)))
-            #plt.colorbar(s1)
-            for ii, cosmostr in enumerate(np.unique(train_strings)):
-                axes[0][1].scatter([], [], c=cmap([ii])[0], label=cosmostr)
-            axes[0][1].legend(bbox_to_anchor=(1.5, 1))
-
-            train_tSNE = TSNE(n_components=2,init = 'random').fit_transform(train_latent)
-            axes[1][0].scatter(train_tSNE[:, 0], train_tSNE[:, 1], s=1.5, alpha=0.7,
-                               c=train_labels, cmap=cmap)
-            axes[1][0].set(title="tSNE of Train latent space",
-                        xlabel="tSNE1",
-                        ylabel="tSNE2")
-
-            test_tSNE = TSNE(n_components=2, init = 'random').fit_transform(test_latent)
-            axes[1][1].scatter(test_tSNE[:, 0], test_tSNE[:, 1], s=1.5, alpha=0.7,
-                               c=test_labels, cmap=cmap)
-            axes[1][1].set(title="tSNE of Test latent space",
-                        xlabel="tSNE1",
-                        ylabel="tSNE2")
-
-
-            plt.savefig(f"{args.savepath}/VAE_latent_epoch_{epoch}.png")
-            fig, axes = plt.subplots(figsize=(6,4), dpi=120)
-            axes.plot(losses)
-            axes.set(xlabel="Epoch", ylabel="Training loss")
-            plt.savefig(f"{args.savepath}/training_loss_epoch_{epoch}.png")
 
 
 if __name__=="__main__":
