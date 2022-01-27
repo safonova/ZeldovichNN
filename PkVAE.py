@@ -153,7 +153,7 @@ def main(args):
         train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
         train_losses.append(train_loss)
         test_loss = test(model, test_loader, device, args.KL_weight)
-        test_loss.append(test_loss)
+        test_losses.append(test_loss)
 
         # Save the latest model state if the loss has decreased
         if train_loss < train_losses[-1]:
