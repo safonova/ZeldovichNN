@@ -143,21 +143,24 @@ def main(args):
     model = VAE(train_input.shape[1], args.latent_width, args.hidden_width).to(device)
 
     if args.reload:
-        state_dict = torch.load(args.savepath + "/checkpt.pth", map_location=device)
-        model.load_state_dict(state_dict["state_dict"])
+        model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
+        model.eval()
+        #model.load_state_dict(state_dict["state_dict"])
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     train_losses = []
     test_losses = []
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
+        # Save the latest model state if the loss has decreased
+        if train_loss < train_losses[-1]:
+            torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
+            
         train_losses.append(train_loss)
         test_loss = test(model, test_loader, device, args.KL_weight)
         test_losses.append(test_loss)
 
-        # Save the latest model state if the loss has decreased
-        if train_loss < train_losses[-1]:
-            torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
+
 
         if epoch % args.output_frequency == 0:
             #Write out the current state of the model
