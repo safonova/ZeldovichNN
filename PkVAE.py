@@ -156,7 +156,7 @@ def main(args):
         # Save the latest model state if the loss has decreased
         if train_loss < best_loss:
             best_loss = train_loss
-            torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
+            torch.save(model, os.path.join(args.savepath, 'checkpt.pth'))
 
         train_losses.append(train_loss)
         test_loss = test(model, test_loader, device, args.KL_weight)
