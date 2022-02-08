@@ -166,7 +166,7 @@ def main(args):
 
         if epoch % args.output_frequency == 0:
             #Write out the current state of the model
-            torch.save(model, os.path.join(args.savepath, 'checkpt-%04d.pth' % epoch))
+            torch.save(model, os.path.join(args.savepath, f'checkpt-{epoch}.pth'))
 
             train_latent = model.latent_numpy(train_input)
             test_latent = model.latent_numpy(test_input)
