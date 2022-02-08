@@ -150,12 +150,14 @@ def main(args):
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     train_losses = []
     test_losses = []
+    best_loss = 1e16
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
         # Save the latest model state if the loss has decreased
-        if train_loss < train_losses[-1]:
+        if train_loss < best_loss:
+            best_loss = train_loss
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth' % epoch))
-            
+
         train_losses.append(train_loss)
         test_loss = test(model, test_loader, device, args.KL_weight)
         test_losses.append(test_loss)
