@@ -55,6 +55,7 @@ def test(model, test_loader, device, KLD_weight):
 
     return test_loss
 
+
 def visualize_latent(train_latent,
                      test_latent,
                      train_labels,
@@ -63,22 +64,28 @@ def visualize_latent(train_latent,
                      epoch,
                      args):
     cmap = cm.get_cmap(args.colormap, len(np.unique(train_labels)))
-
+    latent_all = torch.cat([test_latent, train_latent])
     phate_op = phate.PHATE()
-    data_phate = phate_op.fit_transform(train_latent)
+    data_phate = phate_op.fit_transform(latent_all)
 
     fig, axes = plt.subplots(figsize=(12, 8), dpi=120, nrows=2, ncols=3)
-    axes[0][0].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
+    axes[0][0].scatter(#data_phate[:, 0], data_phate[:, 1],
+                       data_phate[len(test_latent):, 0],
+                       data_phate[len(test_latent):, 1],
+                       s=1.5, alpha=0.7,
                        c=train_labels, cmap=cmap)
     axes[0][0].set(title="PHATE of Train latent space",
                    xlabel="PHATE1",
                    ylabel="PHATE2")
 
-    phate_op = phate.PHATE()
-    data_phate = phate_op.fit_transform(test_latent)
+    '''phate_op = phate.PHATE()
+    data_phate = phate_op.fit_transform(test_latent)'''
 
-    axes[0][1].scatter(data_phate[:, 0], data_phate[:, 1], s=1.5, alpha=0.7,
-                            c=test_labels, cmap=cmap)
+    axes[0][1].scatter(#data_phate[:, 0], data_phate[:, 1],
+        data_phate[:len(test_latent), 0],
+        data_phate[:len(test_latent), 1],
+                       s=1.5, alpha=0.7,
+                       c=test_labels, cmap=cmap)
     axes[0][1].set(title="PHATE of Test latent space",
                    xlabel="PHATE1",
                    ylabel="PHATE2")
