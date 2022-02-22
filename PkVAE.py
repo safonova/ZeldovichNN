@@ -64,7 +64,7 @@ def visualize_latent(train_latent,
                      epoch,
                      args):
     cmap = cm.get_cmap(args.colormap, len(np.unique(train_labels)))
-    latent_all = torch.cat([test_latent, train_latent])
+    latent_all = np.vstack([test_latent, train_latent])
     phate_op = phate.PHATE()
     data_phate = phate_op.fit_transform(latent_all)
 
@@ -78,8 +78,6 @@ def visualize_latent(train_latent,
                    xlabel="PHATE1",
                    ylabel="PHATE2")
 
-    '''phate_op = phate.PHATE()
-    data_phate = phate_op.fit_transform(test_latent)'''
 
     axes[0][1].scatter(#data_phate[:, 0], data_phate[:, 1],
         data_phate[:len(test_latent), 0],
