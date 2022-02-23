@@ -175,7 +175,7 @@ def main(args):
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth'))
 
         train_losses.append(train_loss)
-        test_loss = test(model, test_loader, device, args.KL_weight)
+        test_loss = test(model, test_loader, device, args.KL_weight, args.grad_weight)
         test_losses.append(test_loss)
 
 
