@@ -26,11 +26,10 @@ def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6, grad_weight=0):
     KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
     recon_weight = 1
 
-    gradient = np.gradient(recon_x, axis=1)
-    abs_sum_grad = np.sum(abs(gradient))/len(recon_x)
+    gradient = np.gradient(recon_x.detach().numpy(), axis=1)
+    abs_sum_grad = np.sum(abs(gradient))/len(recon_x.detach().numpy())
 
     result = recon_weight * recon_loss + KLD_weight * KLD + abs_sum_grad * grad_weight
-
 
     return result
 
