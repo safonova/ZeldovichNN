@@ -20,37 +20,49 @@ from VAE import VAE
 
 
 
-def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6):
+def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6, grad_weight=0):
     x = torch.reshape(x, list(recon_x.shape))
     recon_loss = nn.functional.mse_loss(recon_x, x)
     KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
     recon_weight = 1
-    result = recon_weight * recon_loss + KLD_weight * KLD
+
+    gradient = np.gradient(recon_x, axis=1)
+    abs_sum_grad = np.sum(abs(gradient))/len(recon_x)
+
+    result = recon_weight * recon_loss + KLD_weight * KLD + abs_sum_grad * grad_weight
+
+
     return result
 
 
-def train(model, train_loader, device, optimizer, KLD_weight):
+def train(model, train_loader, device, optimizer, KLD_weight, grad_weight):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
-        loss = VAE_loss_function(recon_batch, data, mu, logvar, KLD_weight=KLD_weight)
+        loss = VAE_loss_function(recon_batch,
+                                 data,
+                                 mu,
+                                 logvar,
+                                 KLD_weight=KLD_weight,
+                                 grad_weight=grad_weight
+                                 )
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
     return train_loss / len(train_loader.dataset)
 
 
-def test(model, test_loader, device, KLD_weight):
+def test(model, test_loader, device, KLD_weight, grad_weight):
     test_loss = 0
     with torch.no_grad():
         for data, targets, labels in test_loader:
             data, targets = data.to(device), targets.to(device)
             recon_batch, mu, logvar = model(data)
             test_loss += VAE_loss_function(recon_batch, data, mu, logvar,
-                                           KLD_weight=KLD_weight).item()  # sum up batch loss
+                                           KLD_weight=KLD_weight, grad_weight=grad_weight).item()  # sum up batch loss
     test_loss /= len(test_loader.dataset)
 
     return test_loss
@@ -69,7 +81,7 @@ def visualize_latent(train_latent,
     data_phate = phate_op.fit_transform(latent_all)
 
     fig, axes = plt.subplots(figsize=(12, 8), dpi=120, nrows=2, ncols=3)
-    axes[0][0].scatter(#data_phate[:, 0], data_phate[:, 1],
+    axes[0][0].scatter(
                        data_phate[len(test_latent):, 0],
                        data_phate[len(test_latent):, 1],
                        s=1.5, alpha=0.7,
@@ -79,7 +91,7 @@ def visualize_latent(train_latent,
                    ylabel="PHATE2")
 
 
-    axes[0][1].scatter(#data_phate[:, 0], data_phate[:, 1],
+    axes[0][1].scatter(
         data_phate[:len(test_latent), 0],
         data_phate[:len(test_latent), 1],
                        s=1.5, alpha=0.7,
@@ -150,14 +162,14 @@ def main(args):
     if args.reload:
         model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
         model.eval()
-        #model.load_state_dict(state_dict["state_dict"])
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     train_losses = []
     test_losses = []
     best_loss = 1e16
     for epoch in range(1, epochs + 1):
-        train_loss = train(model, train_loader, device, optimizer, KLD_weight=args.KL_weight)
+        train_loss = train(model, train_loader, device, optimizer,
+                           KLD_weight=args.KL_weight, grad_weight=args.grad_weight)
         # Save the latest model state if the loss has decreased
         if train_loss < best_loss:
             best_loss = train_loss

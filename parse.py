@@ -12,7 +12,9 @@ parser.add_argument("--output_frequency", type=int, default=200,
                     help='How many epochs should pass between saving model output and visualizing')
 parser.add_argument("--reload", action="store_true",
                     help="Resurrects existing model from last checkpoint in the savepath.")
-parser.add_argument("--KL_weight", type=float, default=1,
+parser.add_argument("--KL_weight", type=float, default=5e-6,
+                    help='Weight applied to the KL divergence term int he loss function.')
+parser.add_argument("--grad_weight", type=float, default=5e-4,
                     help='Weight applied to the KL divergence term int he loss function.')
 parser.add_argument("--epochs", type=int, default=10000, help='Number of epochs to train over.')
 parser.add_argument("--lr", type=float, default=5e-8, help='Learning rate for the optimizer.')
