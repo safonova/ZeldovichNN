@@ -27,7 +27,8 @@ def cov_matrix_loss(reconstructed_data, c_sq_inv):
     return np.linalg.norm(precision_difference, 'fro')
 
 
-def VAE_loss_function(recon_x, x, mu, logvar, c_sq_inv, KLD_weight=1e-6, grad_weight=0, cov_weight=0):
+def VAE_loss_function(recon_x, x, mu, logvar, c_sq_inv, scales, shifts,
+                      KLD_weight=1e-6, grad_weight=0, cov_weight=0):
     x = torch.reshape(x, list(recon_x.shape))
     recon_loss = nn.functional.mse_loss(recon_x, x)
     KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
@@ -36,14 +37,24 @@ def VAE_loss_function(recon_x, x, mu, logvar, c_sq_inv, KLD_weight=1e-6, grad_we
     gradient = np.gradient(recon_x.detach().numpy(), axis=1)
     abs_sum_grad = torch.sum(torch.Tensor(abs(gradient)/len(recon_x.detach().numpy())))
 
-    covariance_loss = cov_matrix_loss(recon_x.detach().numpy(), c_sq_inv)
+    covariance_loss = cov_matrix_loss(scales*recon_x.detach().numpy()+shifts, c_sq_inv)
 
     result = recon_weight * recon_loss + KLD_weight * KLD + abs_sum_grad * grad_weight+covariance_loss*cov_weight
 
     return result
 
 
-def train(model, train_loader, device, optimizer, KLD_weight, grad_weight, cov_weight, c_sq_inv):
+def train(model,
+          train_loader,
+          device,
+          optimizer,
+          KLD_weight,
+          grad_weight,
+          cov_weight,
+          c_sq_inv,
+          scales, shifts,
+          scales=None,
+          shifts=None):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
@@ -55,6 +66,7 @@ def train(model, train_loader, device, optimizer, KLD_weight, grad_weight, cov_w
                                  mu,
                                  logvar,
                                  c_sq_inv,
+                                 scales, shifts,
                                  KLD_weight=KLD_weight,
                                  grad_weight=grad_weight,
                                  cov_weight=cov_weight
@@ -65,13 +77,13 @@ def train(model, train_loader, device, optimizer, KLD_weight, grad_weight, cov_w
     return train_loss / len(train_loader.dataset)
 
 
-def test(model, test_loader, device, KLD_weight, grad_weight, cov_weight, c_sq_inv):
+def test(model, test_loader, device, KLD_weight, grad_weight, cov_weight, c_sq_inv,  scales, shifts, ):
     test_loss = 0
     with torch.no_grad():
         for data, targets, labels in test_loader:
             data, targets = data.to(device), targets.to(device)
             recon_batch, mu, logvar = model(data)
-            test_loss += VAE_loss_function(recon_batch, data, mu, logvar, c_sq_inv,
+            test_loss += VAE_loss_function(recon_batch, data, mu, logvar, c_sq_inv, scales, shifts,
                                            KLD_weight=KLD_weight,
                                            grad_weight=grad_weight,
                                            cov_weight=cov_weight).item()  # sum up batch loss
@@ -156,6 +168,8 @@ def main(args):
     test_input = torch.Tensor(dataset['test_input'])
     test_labels = torch.Tensor(dataset['test_labels'])
     test_strings = dataset['test_strings']
+    scales = dataset['scales']
+    shifts = dataset['shifts']
 
     train_dataset = TensorDataset(train_input, train_output, train_labels)
     test_dataset = TensorDataset(test_input, test_output, test_labels)
@@ -190,7 +204,9 @@ def main(args):
                            args.KL_weight,
                            args.grad_weight,
                            args.covariance_weight,
-                           c_sq_inv)
+                           c_sq_inv,
+                           scales, shifts,
+                           )
         # Save the latest model state if the loss has decreased
         if train_loss < best_loss:
             best_loss = train_loss
@@ -198,7 +214,9 @@ def main(args):
 
         train_losses.append(train_loss)
         test_loss = test(model, test_loader, device, args.KL_weight,
-                         args.grad_weight, args.covariance_weight, c_sq_inv)
+                         args.grad_weight, args.covariance_weight, c_sq_inv,
+                         scales, shifts
+                         )
         test_losses.append(test_loss)
 
 
