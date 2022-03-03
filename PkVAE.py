@@ -7,6 +7,7 @@ from torch import nn, optim
 from torch.utils.data import TensorDataset
 
 import numpy as np
+import scipy.linalg
 
 import phate
 from sklearn.manifold import TSNE
@@ -19,8 +20,14 @@ matplotlib.use("Agg")
 from VAE import VAE
 
 
+def cov_matrix_loss(reconstructed_data, c_sq_inv):
+    covariance_estimate = np.cov(reconstructed_data.T)
+    precision_mx_estimate = np.linalg.inv(covariance_estimate)
+    precision_difference = c_sq_inv @ precision_mx_estimate @ c_sq_inv - np.eye(c_sq_inv.shape[0])
+    return np.linalg.norm(precision_difference, 'fro')
 
-def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6, grad_weight=0):
+
+def VAE_loss_function(recon_x, x, mu, logvar, c_sq_inv, KLD_weight=1e-6, grad_weight=0, cov_weight=0):
     x = torch.reshape(x, list(recon_x.shape))
     recon_loss = nn.functional.mse_loss(recon_x, x)
     KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
@@ -29,12 +36,14 @@ def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6, grad_weight=0):
     gradient = np.gradient(recon_x.detach().numpy(), axis=1)
     abs_sum_grad = torch.sum(torch.Tensor(abs(gradient)/len(recon_x.detach().numpy())))
 
-    result = recon_weight * recon_loss + KLD_weight * KLD + abs_sum_grad * grad_weight
+    covariance_loss = cov_matrix_loss(recon_x.detach().numpy(), c_sq_inv)
+
+    result = recon_weight * recon_loss + KLD_weight * KLD + abs_sum_grad * grad_weight+covariance_loss*cov_weight
 
     return result
 
 
-def train(model, train_loader, device, optimizer, KLD_weight, grad_weight):
+def train(model, train_loader, device, optimizer, KLD_weight, grad_weight, cov_weight, c_sq_inv):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
@@ -45,8 +54,10 @@ def train(model, train_loader, device, optimizer, KLD_weight, grad_weight):
                                  data,
                                  mu,
                                  logvar,
+                                 c_sq_inv,
                                  KLD_weight=KLD_weight,
-                                 grad_weight=grad_weight
+                                 grad_weight=grad_weight,
+                                 cov_weight=cov_weight
                                  )
         loss.backward()
         train_loss += loss.item()
@@ -54,14 +65,16 @@ def train(model, train_loader, device, optimizer, KLD_weight, grad_weight):
     return train_loss / len(train_loader.dataset)
 
 
-def test(model, test_loader, device, KLD_weight, grad_weight):
+def test(model, test_loader, device, KLD_weight, grad_weight, cov_weight, c_sq_inv):
     test_loss = 0
     with torch.no_grad():
         for data, targets, labels in test_loader:
             data, targets = data.to(device), targets.to(device)
             recon_batch, mu, logvar = model(data)
-            test_loss += VAE_loss_function(recon_batch, data, mu, logvar,
-                                           KLD_weight=KLD_weight, grad_weight=grad_weight).item()  # sum up batch loss
+            test_loss += VAE_loss_function(recon_batch, data, mu, logvar, c_sq_inv,
+                                           KLD_weight=KLD_weight,
+                                           grad_weight=grad_weight,
+                                           cov_weight=cov_weight).item()  # sum up batch loss
     test_loss /= len(test_loader.dataset)
 
     return test_loss
@@ -151,6 +164,9 @@ def main(args):
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
+    covariance = np.load(args.covariancepath)
+    c_sq_inv = scipy.linalg.inv(scipy.linalg.sqrtm(covariance))
+
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -167,15 +183,18 @@ def main(args):
     test_losses = []
     best_loss = 1e16
     for epoch in range(1, epochs + 1):
-        train_loss = train(model, train_loader, device, optimizer,
-                           KLD_weight=args.KL_weight, grad_weight=args.grad_weight)
+        train_loss = train(model, train_loader, device, optimizer, c_sq_inv,
+                           KLD_weight=args.KL_weight,
+                           grad_weight=args.grad_weight,
+                           cov_weight=args.covariance_weight)
         # Save the latest model state if the loss has decreased
         if train_loss < best_loss:
             best_loss = train_loss
             torch.save(model, os.path.join(args.savepath, 'checkpt.pth'))
 
         train_losses.append(train_loss)
-        test_loss = test(model, test_loader, device, args.KL_weight, args.grad_weight)
+        test_loss = test(model, test_loader, device, args.KL_weight,
+                         args.grad_weight, args.covariance_weight, c_sq_inv)
         test_losses.append(test_loss)
 
 

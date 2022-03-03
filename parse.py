@@ -13,9 +13,11 @@ parser.add_argument("--output_frequency", type=int, default=200,
 parser.add_argument("--reload", action="store_true",
                     help="Resurrects existing model from last checkpoint in the savepath.")
 parser.add_argument("--KL_weight", type=float, default=5e-6,
-                    help='Weight applied to the KL divergence term int he loss function.')
+                    help='Weight applied to the KL divergence term in the loss function.')
 parser.add_argument("--grad_weight", type=float, default=5e-4,
-                    help='Weight applied to the KL divergence term int he loss function.')
+                    help='Weight applied to the KL divergence term in the loss function.')
+parser.add_argument("--covariance_weight", type=float, default=1e-4,
+                    help='Weight applied to the KL divergence term in the loss function.')
 parser.add_argument("--epochs", type=int, default=10000, help='Number of epochs to train over.')
 parser.add_argument("--lr", type=float, default=5e-8, help='Learning rate for the optimizer.')
 parser.add_argument("--seed", type=int, default=1, help="Seed for random processes in PyTorch.")
@@ -25,3 +27,4 @@ parser.add_argument("--hidden_width", type=int, default=400,
 
 parser.add_argument('--colormap', type=str, default="Spectral",
                     help="Name of matplotlib color map to use in plotting the latent space.")
+parser.add_argument("--covariancepath", type=str, help="File path for the covariance matrix to use in the loss function.")
