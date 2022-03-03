@@ -183,10 +183,14 @@ def main(args):
     test_losses = []
     best_loss = 1e16
     for epoch in range(1, epochs + 1):
-        train_loss = train(model, train_loader, device, optimizer, c_sq_inv,
-                           KLD_weight=args.KL_weight,
-                           grad_weight=args.grad_weight,
-                           cov_weight=args.covariance_weight)
+        train_loss = train(model,
+                           train_loader,
+                           device,
+                           optimizer,
+                           args.KL_weight,
+                           args.grad_weight,
+                           args.covariance_weight,
+                           c_sq_inv)
         # Save the latest model state if the loss has decreased
         if train_loss < best_loss:
             best_loss = train_loss
