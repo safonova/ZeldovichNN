@@ -52,9 +52,8 @@ def train(model,
           grad_weight,
           cov_weight,
           c_sq_inv,
-          scales, shifts,
-          scales=None,
-          shifts=None):
+          scales,
+          shifts):
     model.train()
     train_loss = 0
     for batch_idx, (data, targets, labels) in enumerate(train_loader):
