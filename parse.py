@@ -25,3 +25,4 @@ parser.add_argument("--hidden_width", type=int, default=400,
 
 parser.add_argument('--colormap', type=str, default="Spectral",
                     help="Name of matplotlib color map to use in plotting the latent space.")
+ 
