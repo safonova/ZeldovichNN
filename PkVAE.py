@@ -23,8 +23,8 @@ from VAE import VAE
 def VAE_loss_function(recon_x, x, mu, logvar, KLD_weight=1e-6, grad_weight=0):
     x = torch.reshape(x, list(recon_x.shape))
     recon_loss = nn.functional.mse_loss(recon_x, x)
-    #KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
-    KLD = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
+    KLD = torch.sum(-0.5 * (1 + logvar - mu ** 2 - torch.exp(logvar)))
+    #KLD = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
 
     recon_weight = 1
 
