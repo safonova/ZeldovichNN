@@ -303,7 +303,7 @@ def main(args):
         plt.plot(test_losses, label='test')
         plt.legend(loc='upper right')
         plt.yscale('log')
-        plt.savefig(f"{args.savepath}losses_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}losses_epoch_{(1+epoch_cluster) * epoch}")
 
         fig, axes = plt.subplots(dpi=120)
         plt.plot(test_losses_recon_eps, label='epsilon reconstruction loss')
@@ -311,7 +311,7 @@ def main(args):
         plt.plot(test_losses_param, label='parameter loss')
         plt.legend(loc='upper right')
         plt.yscale('log')
-        plt.savefig(f"{args.savepath}loss_components_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}loss_components_epoch_{(1+epoch_cluster) * epoch}")
 
         encoded1 = model.encoder(test_input.view(-1, 62))
         alpha_fit = model.predefined(encoded1)
@@ -320,7 +320,7 @@ def main(args):
         plt.hist(undo_alpha_prime(alpha_fit.detach().numpy().flatten()) -
                  undo_alpha_prime(alpha_prime[Ntrain:]), np.linspace(-0.04, 0.04, 20))
         plt.xlabel(r"$\alpha$ NN fit - truth")
-        plt.savefig(f"{args.savepath}loss_components_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}alpha_histogram_epoch_{(1+epoch_cluster) * epoch}")
 
 
         recon_batch, mu, eps = model(test_input)
@@ -344,7 +344,7 @@ def main(args):
         plt.plot([], c="k", label="Ground truth", ls=":")
         plt.plot([], c="k", label="Reconstruction", ls="-.")
         plt.legend()
-        plt.savefig(f"{args.savepath}xi_reconstruction_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}xi_reconstruction_epoch_{(1+epoch_cluster) * epoch}")
 
         fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
         for ii in range(idx, idx + 3):
@@ -353,7 +353,7 @@ def main(args):
         plt.legend(loc='upper left')
         plt.title("True template - fit template")
 
-        plt.savefig(f"{args.savepath}template_difference_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}template_difference_epoch_{(1+epoch_cluster) * epoch}")
 
         fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
         for ii in range(idx, idx + 3):
@@ -377,7 +377,7 @@ def main(args):
         plt.plot([], c="k", label="Reconstruction", ls="-.")
         plt.legend(loc='upper left')
         plt.title("Epsilon")
-        plt.savefig(f"{args.savepath}loss_components_epoch_{epoch_cluster * epoch}")
+        plt.savefig(f"{args.savepath}loss_components_epoch_{(1+epoch_cluster) * epoch}")
 
 if __name__ == "__main__":
     from parse import parser
