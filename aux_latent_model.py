@@ -276,7 +276,7 @@ def main(args):
     test_losses_recon_temp = []
     test_losses_param = []
     best_loss = 1e16
-    for epoch_cluster in range(500):
+    for epoch_cluster in range(int(args.epochs/args.output_frequency)):
         for epoch in range(args.output_frequency):
             loss = train(model, train_loader, device,
                          optimizer, np.linalg.inv(cov), xi_template, r)
