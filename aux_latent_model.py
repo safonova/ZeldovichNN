@@ -239,7 +239,7 @@ def mixed_loss_function(recon_x, x, alpha_prime, true_alpha,
 def main(args):
     data = h5py.File("vae-fit-test0.h5", 'r')
 
-    for key in hello.keys():
+    for key in data.keys():
         exec(f"{key} = data['{key}'][...]")
     xi_prime = reparametrize_xi(xi, r)
     alpha_prime = reparametrize_alpha(alpha)
