@@ -377,7 +377,7 @@ def main(args):
         plt.plot([], c="k", label="Reconstruction", ls="-.")
         plt.legend(loc='upper left')
         plt.title("Epsilon")
-        plt.savefig(f"{args.savepath}loss_components_epoch_{(1+epoch_cluster) * epoch}")
+        plt.savefig(f"{args.savepath}epsilon_reconstruction_epoch_{(1+epoch_cluster) * epoch}")
 
 if __name__ == "__main__":
     from parse import parser
