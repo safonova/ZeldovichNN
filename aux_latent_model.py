@@ -266,12 +266,11 @@ def main(args):
     train_dataset = TensorDataset(train_input, torch.Tensor(alpha_prime[:Ntrain]))
     test_dataset = TensorDataset(test_input, torch.Tensor(alpha_prime[Ntrain:]))
 
-    batch_size = args.batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset,
-                                               batch_size=batch_size,
+                                               batch_size=args.batch_size,
                                                shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset,
-                                              batch_size=batch_size,
+                                              batch_size=args.batch_size,
                                               shuffle=True)
 
     cudabool = torch.cuda.is_available()
@@ -283,8 +282,11 @@ def main(args):
                         1, xi_template,
                         indep_var=torch.Tensor([r]).reshape([1, 62]),
                         latent_width=args.latent_width, hidden_width=args.hidden_width).to(device)
+    if args.reload:
+        model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
+        model.eval()
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
     train_losses = []
     test_losses = []
     test_losses_recon_eps = []
