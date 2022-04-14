@@ -29,6 +29,9 @@ class AuxLatentNN(nn.Module):
                                      nn.LeakyReLU(),
                                      )
         self.predefined = nn.Sequential(nn.Linear(2 * self.hidden_width,
+                                                  self.hidden_width),
+                                        nn.LeakyReLU(),
+                                        nn.Linear(self.hidden_width,
                                                   self.model_params),
                                         nn.Sigmoid()
                                         )
