@@ -95,7 +95,7 @@ class CustomFinalLayer(nn.Module):
         return xi_polynom.flatten()
 
     def undo_alpha_prime(self, alpha_prime):
-        alpha = 0.1 * (alpha_prime*0.5+0.5) + 0.95
+        alpha = 0.05 * alpha_prime + 1
         return alpha
 
     def forward(self, packaged_input):
@@ -159,11 +159,11 @@ def reparametrize_xi(xi, r):
     return xi_polynom
 
 def reparametrize_alpha(alpha):
-    alpha_prime = (alpha-1)*10+0.5
+    alpha_prime = (alpha-1)/0.05
     return alpha_prime
 
 def undo_alpha_prime(alpha_prime):
-    alpha = 0.1 * alpha_prime + 0.95
+    alpha = 0.05 * alpha_prime + 1
     return alpha
 
 
@@ -296,7 +296,7 @@ def main(args):
     test_losses_recon_temp = []
     test_losses_param = []
     best_loss = 1e16
-    for epoch_cluster in range(int(args.epochs/args.output_frequency)):
+    for epoch in range(1, args.epochs + 1):
         for epoch in range(args.output_frequency):
             loss = train(model, train_loader, device,
                          optimizer, np.linalg.inv(cov), xi_template, r)
@@ -307,91 +307,91 @@ def main(args):
             test_losses_recon_eps.append(loss_recon_eps)
             test_losses_recon_temp.append(loss_recon_temp)
             test_losses_param.append(loss_param)
-            print(len(train_losses))
             if loss_total < best_loss:
                 best_loss = loss_total
                 torch.save(model, args.savepath + 'checkpt.pth')
 
-        fig, axes = plt.subplots(dpi=120)
-        plt.plot(train_losses, label='train')
-        plt.plot(test_losses, label='test')
-        plt.legend(loc='upper right')
-        plt.yscale('log')
-        plt.savefig(f"{args.savepath}losses_epoch_{(1+epoch_cluster) * epoch+1}")
+        if epoch % args.output_frequency == 0:
+            fig, axes = plt.subplots(dpi=120)
+            plt.plot(train_losses, label='train')
+            plt.plot(test_losses, label='test')
+            plt.legend(loc='upper right')
+            plt.yscale('log')
+            plt.savefig(f"{args.savepath}losses_epoch_{epoch}.png")
 
-        fig, axes = plt.subplots(dpi=120)
-        plt.plot(test_losses_recon_eps, label='epsilon reconstruction loss')
-        plt.plot(test_losses_recon_temp, label="template reconstruction loss")
-        plt.plot(test_losses_param, label='parameter loss')
-        plt.legend(loc='upper right')
-        plt.yscale('log')
-        plt.savefig(f"{args.savepath}loss_components_epoch_{(1+epoch_cluster) * epoch+1}")
+            fig, axes = plt.subplots(dpi=120)
+            plt.plot(test_losses_recon_eps, label='epsilon reconstruction loss')
+            plt.plot(test_losses_recon_temp, label="template reconstruction loss")
+            plt.plot(test_losses_param, label='parameter loss')
+            plt.legend(loc='upper right')
+            plt.yscale('log')
+            plt.savefig(f"{args.savepath}loss_components_epoch_{epoch}.png")
 
-        encoded1 = model.encoder(test_input.view(-1, 62))
-        alpha_fit = model.predefined(encoded1)
+            encoded1 = model.encoder(test_input.view(-1, 62))
+            alpha_fit = model.predefined(encoded1)
 
-        fig, axes = plt.subplots(figsize=(6, 5), dpi=120)
-        plt.hist(undo_alpha_prime(alpha_fit.detach().numpy().flatten()) -
-                 undo_alpha_prime(alpha_prime[Ntrain:]), np.linspace(-0.04, 0.04, 20))
-        plt.xlabel(r"$\alpha$ NN fit - truth")
-        plt.savefig(f"{args.savepath}alpha_histogram_epoch_{(1+epoch_cluster) * epoch+1}")
+            fig, axes = plt.subplots(figsize=(6, 5), dpi=120)
+            plt.hist(undo_alpha_prime(alpha_fit.detach().numpy().flatten()) -
+                     undo_alpha_prime(alpha_prime[Ntrain:]), np.linspace(-0.04, 0.04, 20))
+            plt.xlabel(r"$\alpha$ NN fit - truth")
+            plt.savefig(f"{args.savepath}alpha_histogram_epoch_{epoch}.png")
 
 
-        recon_batch, mu, eps = model(test_input)
-        template_model_fit = torch.Tensor([reparametrize_xi(xi_template(r * undo_alpha_prime(al)), r)
-                                           for al in mu.detach().numpy()])
-        template_true_fit = torch.Tensor([reparametrize_xi(xi_template(r * al), r)
-                                          for al
-                                          in alpha[Ntrain:]])
+            recon_batch, mu, eps = model(test_input)
+            template_model_fit = torch.Tensor([reparametrize_xi(xi_template(r * undo_alpha_prime(al)), r)
+                                               for al in mu.detach().numpy()])
+            template_true_fit = torch.Tensor([reparametrize_xi(xi_template(r * al), r)
+                                              for al
+                                              in alpha[Ntrain:]])
 
-        epsilon_model = recon_batch - template_model_fit
-        epsilon_true = torch.Tensor(xi_prime[Ntrain:]) - template_true_fit
+            epsilon_model = recon_batch - template_model_fit
+            epsilon_true = torch.Tensor(xi_prime[Ntrain:]) - template_true_fit
 
-        idx = np.random.choice(len(test_input) - 4)
+            idx = np.random.choice(len(test_input) - 4)
 
-        fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
-        for ii in range(idx, idx + 3):
-            plt.plot((xi_prime[Ntrain + ii]),
-                     c=f"C0{ii}", ls=":")
-            plt.plot(recon_batch.detach().numpy()[ii], ls="-.",
-                     c=f"C0{ii}")
-        plt.plot([], c="k", label="Ground truth", ls=":")
-        plt.plot([], c="k", label="Reconstruction", ls="-.")
-        plt.legend()
-        plt.savefig(f"{args.savepath}xi_reconstruction_epoch_{(1+epoch_cluster) * epoch+1}")
+            fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
+            for ii in range(idx, idx + 3):
+                plt.plot((xi_prime[Ntrain + ii]),
+                         c=f"C0{ii}", ls=":")
+                plt.plot(recon_batch.detach().numpy()[ii], ls="-.",
+                         c=f"C0{ii}")
+            plt.plot([], c="k", label="Ground truth", ls=":")
+            plt.plot([], c="k", label="Reconstruction", ls="-.")
+            plt.legend()
+            plt.savefig(f"{args.savepath}xi_reconstruction_epoch_{epoch}.png")
 
-        fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
-        for ii in range(idx, idx + 3):
-            plt.plot(template_true_fit.detach().numpy()[ii] - template_model_fit.detach().numpy()[ii], ls="-",
-                     c=f"C0{ii}", label=r"$\alpha$" + f"{undo_alpha_prime(mu.detach().numpy())[ii][0]}")
-        plt.legend(loc='upper left')
-        plt.title("True template - fit template")
+            fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
+            for ii in range(idx, idx + 3):
+                plt.plot(template_true_fit.detach().numpy()[ii] - template_model_fit.detach().numpy()[ii], ls="-",
+                         c=f"C0{ii}", label=r"$\alpha$" + f"{undo_alpha_prime(mu.detach().numpy())[ii][0]}")
+            plt.legend(loc='upper left')
+            plt.title("True template - fit template")
 
-        plt.savefig(f"{args.savepath}template_difference_epoch_{(1+epoch_cluster) * epoch+1}")
+            plt.savefig(f"{args.savepath}template_difference_epoch_{epoch}.png")
 
-        fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
-        for ii in range(idx, idx + 3):
-            plt.plot(template_true_fit.detach().numpy()[ii],
-                     c=f"C0{ii}", ls=":")
-            plt.plot(template_model_fit.detach().numpy()[ii], ls="-.",
-                     c=f"C0{ii}")
-        plt.plot([], c="k", label="Ground truth", ls=":")
-        plt.plot([], c="k", label="Reconstruction", ls="-.")
-        plt.legend(loc='upper left')
-        plt.title("Model")
-        plt.savefig(f"{args.savepath}template_epoch_{(1+epoch_cluster) * epoch+1}")
+            fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
+            for ii in range(idx, idx + 3):
+                plt.plot(template_true_fit.detach().numpy()[ii],
+                         c=f"C0{ii}", ls=":")
+                plt.plot(template_model_fit.detach().numpy()[ii], ls="-.",
+                         c=f"C0{ii}")
+            plt.plot([], c="k", label="Ground truth", ls=":")
+            plt.plot([], c="k", label="Reconstruction", ls="-.")
+            plt.legend(loc='upper left')
+            plt.title("Model")
+            plt.savefig(f"{args.savepath}template_epoch_{epoch}.png")
 
-        fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
-        for ii in range(idx, idx + 3):
-            plt.plot(epsilon_true.detach().numpy()[ii],
-                     c=f"C0{ii}", ls=":")
-            plt.plot(epsilon_model.detach().numpy()[ii], ls="-.",
-                     c=f"C0{ii}")
-        plt.plot([], c="k", label="Ground truth", ls=":")
-        plt.plot([], c="k", label="Reconstruction", ls="-.")
-        plt.legend(loc='upper left')
-        plt.title("Epsilon")
-        plt.savefig(f"{args.savepath}epsilon_reconstruction_epoch_{(1+epoch_cluster) * epoch+1}")
+            fig, axes = plt.subplots(figsize=(6, 4), dpi=120)
+            for ii in range(idx, idx + 3):
+                plt.plot(epsilon_true.detach().numpy()[ii],
+                         c=f"C0{ii}", ls=":")
+                plt.plot(epsilon_model.detach().numpy()[ii], ls="-.",
+                         c=f"C0{ii}")
+            plt.plot([], c="k", label="Ground truth", ls=":")
+            plt.plot([], c="k", label="Reconstruction", ls="-.")
+            plt.legend(loc='upper left')
+            plt.title("Epsilon")
+            plt.savefig(f"{args.savepath}epsilon_reconstruction_epoch_{epoch}.png")
 
 if __name__ == "__main__":
     from parse import parser
