@@ -33,7 +33,7 @@ class AuxLatentNN(nn.Module):
                                         nn.LeakyReLU(),
                                         nn.Linear(self.hidden_width,
                                                   self.model_params),
-                                        nn.Sigmoid()
+                                        nn.Tanh()
                                         )
         self.epsilon = nn.Sequential(nn.Linear(2 * self.hidden_width,
                                                self.latent_width))
@@ -95,7 +95,7 @@ class CustomFinalLayer(nn.Module):
         return xi_polynom.flatten()
 
     def undo_alpha_prime(self, alpha_prime):
-        alpha = 0.1 * alpha_prime + 0.95
+        alpha = 0.1 * (alpha_prime*0.5+0.5) + 0.95
         return alpha
 
     def forward(self, packaged_input):
