@@ -297,19 +297,18 @@ def main(args):
     test_losses_param = []
     best_loss = 1e16
     for epoch in range(1, args.epochs + 1):
-        for epoch in range(args.output_frequency):
-            loss = train(model, train_loader, device,
-                         optimizer, np.linalg.inv(cov), xi_template, r)
-            train_losses.append(loss)
-            loss_total, loss_recon_eps, loss_recon_temp, loss_param = test(model, test_loader, device,
-                                                                           np.linalg.inv(cov), xi_template, r)
-            test_losses.append(loss_total)
-            test_losses_recon_eps.append(loss_recon_eps)
-            test_losses_recon_temp.append(loss_recon_temp)
-            test_losses_param.append(loss_param)
-            if loss_total < best_loss:
-                best_loss = loss_total
-                torch.save(model, args.savepath + 'checkpt.pth')
+        loss = train(model, train_loader, device,
+                     optimizer, np.linalg.inv(cov), xi_template, r)
+        train_losses.append(loss)
+        loss_total, loss_recon_eps, loss_recon_temp, loss_param = test(model, test_loader, device,
+                                                                       np.linalg.inv(cov), xi_template, r)
+        test_losses.append(loss_total)
+        test_losses_recon_eps.append(loss_recon_eps)
+        test_losses_recon_temp.append(loss_recon_temp)
+        test_losses_param.append(loss_param)
+        if loss_total < best_loss:
+            best_loss = loss_total
+            torch.save(model, args.savepath + 'checkpt.pth')
 
         if epoch % args.output_frequency == 0:
             fig, axes = plt.subplots(dpi=120)
