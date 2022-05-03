@@ -167,7 +167,10 @@ def main(args):
             model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
             model.eval()
             from glob import glob
-            starting_epoch = np.max([eval(path_str.split("-")[1].split(".")[0]) for path_str in glob(args.savepath + "/checkpt-*")])
+            try:
+                starting_epoch = np.max([eval(path_str.split("-")[1].split(".")[0]) for path_str in glob(args.savepath + "/checkpt-*")])
+            except ValueError:
+                starting_epoch = 1
         except FileNotFoundError:
             print("No checkpoint available to load.")
             model = VAE(train_input.shape[1], args.latent_width, args.hidden_width).to(device)
