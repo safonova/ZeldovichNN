@@ -161,16 +161,22 @@ def main(args):
     torch.manual_seed(args.seed)
 
     model = VAE(train_input.shape[1], args.latent_width, args.hidden_width).to(device)
-
+    starting_epoch = 1
     if args.reload:
-        model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
-        model.eval()
+        try:
+            model = torch.load(args.savepath + "/checkpt.pth", map_location=device)
+            model.eval()
+            from glob import glob
+            starting_epoch = np.max([eval(path_str.split("-")[1].split(".")[0]) for path_str in glob(args.savepath + "/checkpt-*")])
+        except FileNotFoundError:
+            print("No checkpoint available to load.")
+            model = VAE(train_input.shape[1], args.latent_width, args.hidden_width).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     train_losses = []
     test_losses = []
     best_loss = 1e16
-    for epoch in range(1, epochs + 1):
+    for epoch in range(starting_epoch, epochs + starting_epoch):
         train_loss = train(model, train_loader, device, optimizer,
                            args.KL_weight, args.grad_weight, scales)
         # Save the latest model state if the loss has decreased
